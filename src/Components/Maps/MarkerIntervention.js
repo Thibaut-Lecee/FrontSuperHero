@@ -1,37 +1,53 @@
-import { CircleF, MarkerF } from "@react-google-maps/api";
+import { CircleF, InfoWindowF, MarkerF } from "@react-google-maps/api";
 import React from "react";
 import { farOptions } from "./CircleOptions";
+import { Icon } from "@mui/material";
 const MarkerIntervention = ({
-  heroMarkers,
-  handleClose,
-  selectedHero,
-  interventionCircles,
+  marker,
+  setSelectedIntervention,
+  nearbyHeroes,
 }) => {
+  const [open, setOpen] = React.useState(false);
+  const { position, intervention } = marker;
+  const handleClick = () => {
+    setOpen(!open);
+    setSelectedIntervention(intervention, open);
+  };
+  console.log(nearbyHeroes);
   return (
     <>
-      {heroMarkers.map(
-        (marker, index) =>
-          marker.position && (
-            <MarkerF
-              key={index}
-              position={marker.position}
-              onClick={() => handleClose(marker, 10)}
-              icon={{
-                url: `${marker.intervention.incident.svg}`,
-                scaledSize: new window.google.maps.Size(50, 50), // La taille peut être ajustée
-              }}
-            />
-          )
+      <MarkerF
+        position={position}
+        icon={{
+          url: `${marker.intervention.incident.svg}`,
+          scaledSize: new window.google.maps.Size(60, 60),
+        }}
+        onClick={handleClick}
+      >
+        {open && (
+          <InfoWindowF onCloseClick={handleClick}>
+            <div>
+              <h2>Type d'incident: {marker.intervention.incident.type}</h2>
+              <p>Statut de l'incident: {marker.intervention.status.status}</p>
+              <p>
+                Héro:{" "}
+                {marker.intervention.status.superhero !== null
+                  ? marker.intervention.status.superhero.nom
+                  : "Pas de héro"}
+              </p>
+              {/* <p> {hero.nom} + {hero.distance.toFixed(2)} km</p> */}
+            </div>
+          </InfoWindowF>
+        )}
+      </MarkerF>
+      {open && (
+        <CircleF
+          center={position}
+          options={farOptions}
+          radius={50000}
+          onClick={handleClick}
+        />
       )}
-      {selectedHero &&
-        interventionCircles.map((circle, index) => (
-          <CircleF
-            key={index}
-            center={circle.center}
-            radius={circle.radius}
-            options={farOptions}
-          />
-        ))}
     </>
   );
 };

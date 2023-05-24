@@ -13,12 +13,14 @@ const Maps = () => {
   const [heros, setHeros] = React.useState([]);
   const [interventions, setInterventions] = React.useState([]);
   const [selectedHero, setSelectedHero] = React.useState(null);
-  const [statusFilter, setStatusFilter] = React.useState(null);
+  const [selectedIntervention, setSelectedIntervention] = React.useState(null);
+  const [filteredInterventions, setFilteredInterventions] = React.useState([]); // On stocke les interventions filtrées dans un état
   const [open, setOpen] = React.useState(false);
   const [checked, setChecked] = React.useState(null);
   const [zoom, setZoom] = React.useState(5);
   const mapRef = React.useRef(null);
   const [nearbyHeroes, setNearbyHeroes] = React.useState([]);
+  const [interventionMarkers, setInterventionMarkers] = React.useState([]); // On stocke les marqueurs des interventions dans un état
   const [interventionCircles, setInterventionCircles] = React.useState([]);
   const [heroMarkers, setHeroMarkers] = React.useState([]);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -42,18 +44,61 @@ const Maps = () => {
 
   const handleToggle = (value) => () => {
     setChecked(value);
-    setStatusFilter(value); // Ici on met à jour le filtre de statut
+    if (value === "Toutes") {
+      setFilteredInterventions(interventions);
+    } else {
+      const filtered = interventions.filter(
+        (intervention) => intervention.status.status === value
+      );
+      setFilteredInterventions(filtered);
+    }
   };
 
-  const handleClose = (value, zoom) => {
-    setSelectedHero(value);
-    if (value !== null) {
-      setCenter(value.position);
+  const handleInterventionClick = (marker, open) => {
+    if (open === true) {
+      setSelectedIntervention(null);
+      setCenter({ lat: 48.866667, lng: 2.333333 });
+      setZoom(5);
+      setNearbyHeroes([]); // Clear nearby heroes when closing the intervention marker
     } else {
-      setCenter({ lat: 48.856614, lng: 2.3522219 });
+      const [lat, lng] = marker.adresse.split(", ");
+      setSelectedIntervention(marker);
+      setZoom(10); // Zoom onto the marker
+      setCenter({ lat: parseFloat(lat), lng: parseFloat(lng) }); // Center on the marker
+
+      if (marker.status.status === "En attente") {
+        // Calculate nearby heroes only if intervention status is "En attente"
+        const interventionPosition = {
+          lat: parseFloat(lat),
+          lng: parseFloat(lng),
+        };
+        const nearby = heros
+          .map((hero) => {
+            if (hero.adresse) {
+              const [heroLat, heroLng] = hero.adresse.split(", ");
+              const heroPosition = {
+                lat: parseFloat(heroLat),
+                lng: parseFloat(heroLng),
+              };
+              const distance = getDistanceFromLatLonInKm(
+                interventionPosition,
+                heroPosition
+              );
+              if (distance <= 100) {
+                // If the hero is within a 50 km radius
+                return {
+                  // Create a new object that includes the hero's name and distance
+                  nom: hero.nom,
+                  distance,
+                };
+              }
+            }
+            return null;
+          })
+          .filter((hero) => hero !== null); // Filter out any heroes that were not within the radius
+        setNearbyHeroes(nearby);
+      }
     }
-    handleIntervention(interventions, statusFilter);
-    setZoom(zoom);
   };
 
   const onLoad = useCallback((map) => {
@@ -70,33 +115,6 @@ const Maps = () => {
     setCenter(newCenter);
   };
 
-  const filterHerosForIntervention = (intervention) => {
-    if (intervention.status.status !== "En attente") return [];
-
-    const interventionPosition = {
-      lat: intervention.adresse.split(", ")[0],
-      lng: intervention.adresse.split(", ")[1],
-    };
-    const filteredHeros = heros
-      .map((hero) => {
-        if (hero.adresse) {
-          const [lat, lng] = hero.adresse.split(", ");
-          const heroPosition = { lat: parseFloat(lat), lng: parseFloat(lng) };
-          const distance = getDistanceFromLatLonInKm(
-            interventionPosition,
-            heroPosition
-          );
-          if (distance <= 400) {
-            // filtrer les héros dans un rayon de 50 km
-            return { hero, distance }; // renvoyer un objet avec le héros et la distance
-          }
-        }
-        return null;
-      })
-      .filter((item) => item !== null); // filtrer les nulls
-    return filteredHeros;
-  };
-
   useEffect(() => {
     if (isLoaded && heros.length > 0 && !isDragging) {
       const filteredHeros = heros.filter((hero) => {
@@ -104,7 +122,7 @@ const Maps = () => {
           const [lat, lng] = hero.adresse.split(", ");
           const heroPosition = { lat: parseFloat(lat), lng: parseFloat(lng) };
           const distance = getDistanceFromLatLonInKm(center, heroPosition);
-          return distance <= 200; // Filtrer les héros dans le périmètre de 50 km
+          return distance <= 50; // Filtrer les héros dans le périmètre de 50 km
         }
         return false;
       });
@@ -122,80 +140,35 @@ const Maps = () => {
   }, [heros, center, isDragging]);
 
   useEffect(() => {
-    if (
-      selectedHero &&
-      selectedHero.intervention.status.status === "En attente"
-    ) {
-      const nearby = filterHerosForIntervention(selectedHero.intervention);
-      setNearbyHeroes(nearby);
-    } else {
-      setNearbyHeroes([]);
-    }
-  }, [selectedHero]);
-
-  const handleIntervention = (interventions, statusFilter) => {
-    if (interventions.length > 0 && statusFilter) {
-      const filteredInterventions = interventions.filter(
-        (intervention) => statusFilter === intervention.status.status
-      );
+    if (filteredInterventions.length > 0) {
       const markers = filteredInterventions.map((intervention) => {
-        const [lat, lng] = intervention.superhero.adresse.split(", ");
+        const [lat, lng] = intervention.adresse.split(", ");
         const position = { lat: parseFloat(lat), lng: parseFloat(lng) };
         return {
           position,
+          intervention,
           status: intervention.status.status,
-          hero: intervention.superhero,
-          intervention: intervention,
         };
       });
-      setHeroMarkers(markers);
+      setInterventionMarkers(markers);
     } else {
-      const filteredInterventions = interventions.filter(
-        (intervention) =>
-          (intervention.status.status === "En cours" ||
-            intervention.status.status === "En attente") &&
-          intervention.superhero // le héros est présent
-      );
-      const markers = filteredInterventions.map((intervention) => {
-        const [lat, lng] = intervention.superhero.adresse.split(", ");
+      const markers = interventions.map((intervention) => {
+        const [lat, lng] = intervention.adresse.split(", ");
         const position = { lat: parseFloat(lat), lng: parseFloat(lng) };
         return {
           position,
+          intervention,
           status: intervention.status.status,
-          hero: intervention.superhero,
-          intervention: intervention,
         };
       });
-      setHeroMarkers(markers);
+      setInterventionMarkers(markers);
     }
-  };
-  useEffect(() => {
-    handleIntervention(interventions, statusFilter);
-  }, [interventions, statusFilter, selectedHero]);
+  }, [filteredInterventions, interventions]);
 
   useEffect(() => {
     allheros();
     allInterventions();
   }, []);
-  useEffect(() => {
-    if (
-      selectedHero &&
-      selectedHero.intervention.status.status === "En attente"
-    ) {
-      const interventionPosition = selectedHero.position;
-      const circles = [
-        { center: interventionPosition, radius: 10000 },
-        { center: interventionPosition, radius: 25000 },
-        { center: interventionPosition, radius: 50000 },
-      ];
-      setInterventionCircles(circles);
-      const nearby = filterHerosForIntervention(selectedHero.intervention);
-      setNearbyHeroes(nearby);
-    } else {
-      setInterventionCircles([]);
-      setNearbyHeroes([]);
-    }
-  }, [selectedHero]);
 
   return (
     <React.Fragment>
@@ -216,45 +189,14 @@ const Maps = () => {
           onLoad={onLoad}
           options={{ disableDefaultUI: true }}
         >
-          <MarkerIntervention
-            heroMarkers={heroMarkers}
-            handleClose={handleClose}
-            selectedHero={selectedHero}
-            interventionCircles={interventionCircles}
-          />
-
-          <MarkerHero nearbyHeroes={nearbyHeroes} />
-
-          {selectedHero && (
-            <InfoWindowF
-              position={selectedHero.position}
-              onClick={() => setZoom(15)}
-              onCloseClick={() => handleClose(null, 6)}
-            >
-              <div>
-                <h2>Superhero: {selectedHero.hero.nom}</h2>
-                <p>Incident: {selectedHero.intervention.incident.type}</p>
-                <p>Status: {selectedHero.intervention.status.status}</p>
-                {selectedHero.intervention.status.status === "En attente" && (
-                  <div>
-                    <h3>SuperHéros à proximité :</h3>
-                    <ul>
-                      {nearbyHeroes.length > 0 ? (
-                        nearbyHeroes.map((item) => (
-                          <li key={item.hero.id}>
-                            {item.hero.nom} - Distance:{" "}
-                            {item.distance.toFixed(2)} km
-                          </li>
-                        ))
-                      ) : (
-                        <li>Aucun superhéros dans un périmètre de 50km</li>
-                      )}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </InfoWindowF>
-          )}
+          {interventionMarkers.map((marker, index) => (
+            <MarkerIntervention
+              key={index}
+              marker={marker}
+              nearbyHeroes={nearbyHeroes}
+              setSelectedIntervention={handleInterventionClick}
+            />
+          ))}
         </GoogleMap>
       )}
     </React.Fragment>
