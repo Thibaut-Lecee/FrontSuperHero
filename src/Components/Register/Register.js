@@ -21,6 +21,11 @@ import hero from "../Heros/Hero.json";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import { green, red } from "@mui/material/colors";
+import {
+  handleAxiosErrors,
+  showNotificationSuccess,
+} from "../Function/AxiosRequest";
+import { toast, Toaster } from "react-hot-toast";
 
 const Copyright = (props) => {
   return (
@@ -28,7 +33,8 @@ const Copyright = (props) => {
       variant="body2"
       color="text.secondary"
       align="center"
-      {...props}>
+      {...props}
+    >
       {"Copyright © "}
       <Link color="inherit" href="https://mui.com/">
         Squad Gang
@@ -70,7 +76,6 @@ const Register = () => {
     lng: null,
   });
 
-  const [play, setPlay] = React.useState(false);
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -94,6 +99,7 @@ const Register = () => {
           email: data.get("email"),
           password: data.get("password"),
           nom: data.get("nom"),
+          phoneNumber: data.get("telephone"),
           incidents: selectedIncidents,
           adresse: location,
         },
@@ -105,10 +111,12 @@ const Register = () => {
       );
       console.log(response);
       if (response.status === 200) {
-        navigate("/login");
+        showNotificationSuccess("Inscription réussie");
+        navigate("/Login");
       }
     } catch (error) {
       console.log(error);
+      handleAxiosErrors(error);
     }
   };
 
@@ -117,7 +125,6 @@ const Register = () => {
   };
 
   const handleChange = (index) => (event) => {
-    console.log(event.target);
     setSelectedIncidents((prevState) => {
       const newState = [...prevState];
       newState[index] = event.target.value;
@@ -138,10 +145,7 @@ const Register = () => {
       setIncidents(response.data.incidents);
     } catch (error) {}
   };
-  const playAnimation = () => {
-    console.log("The animation has started playing");
-    setPlay(!play);
-  };
+
   const getRandomPicture = async () => {
     setLoading(true);
     try {
@@ -150,7 +154,8 @@ const Register = () => {
       const picture = await axios.get(
         `https://www.superheroapi.com/api.php/${HERO_KEY}/search/${hero[random].name}`
       );
-      if (picture.status === 200 && picture.data.results[0] !== undefined) {
+      console.log(picture.data.results);
+      if (picture.status === 200 && picture.data.results !== undefined) {
         setLoading(false);
         setImage(picture.data.results[0].image.url);
       }
@@ -172,9 +177,7 @@ const Register = () => {
 
     // Vérifiez si l'email est vide ou n'a pas le format correct
     const email = data.get("email");
-    if (!email) {
-      newErrors.email = "L'email est requis.";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!/\S+@\S+\.\S+/.test(email) && email !== "") {
       newErrors.email = "L'email n'est pas valide.";
     } else {
       newErrors.email = "";
@@ -187,11 +190,23 @@ const Register = () => {
       newErrors.telephone = "";
     }
 
+    if (!data.get("password")) {
+      newErrors.password = "Le mot de passe est requis.";
+    } else {
+      newErrors.password = "";
+    }
+
     // Vérifiez si la localisation est vide
     if (!location.lat || !location.lng) {
       newErrors.location = "La localisation est requise.";
     } else {
       newErrors.location = "";
+    }
+
+    if (selectedIncidents.length < 0) {
+      toast.error("Veuillez sélectionner au moins 1 incidents");
+    } else {
+      newErrors.incidents = "";
     }
 
     // Mettez à jour l'état des erreurs
@@ -205,210 +220,219 @@ const Register = () => {
     getRandomPicture();
   }, []);
   return (
-    <ThemeProvider theme={defaultTheme}>
-      {!loading && (
-        <Grid container component="main" sx={{ mt: 15 }}>
-          <CssBaseline />
-          <Grid
-            item
-            xs={false}
-            sm={3}
-            md={6}
-            sx={{
-              backgroundImage: `url(${image})`,
-              backgroundRepeat: "no-repeat",
-              backgroundColor: (t) =>
-                t.palette.mode === "light"
-                  ? t.palette.grey[50]
-                  : t.palette.grey[900],
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              borderRadius: "8px",
-              border: "1px solid #eaeaea",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            }}
-          />
-
-          <Grid
-            item
-            xs={13}
-            sm={9}
-            md={6}
-            component={Paper}
-            elevation={6}
-            square>
-            <Box
+    <>
+      <Toaster reverseOrder={false} />
+      <ThemeProvider theme={defaultTheme}>
+        {!loading && (
+          <Grid container component="main" sx={{ mt: 1 }}>
+            <CssBaseline />
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md={6}
               sx={{
-                my: 8,
-                mx: 4,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}>
-              <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
-                <LockOutlinedIcon />
-              </Avatar>
-              <Typography component="h1" variant="h5">
-                S'enregistrer
-              </Typography>
+                backgroundImage: `url(${image})`,
+                backgroundRepeat: "no-repeat",
+                backgroundColor: (t) =>
+                  t.palette.mode === "light"
+                    ? t.palette.grey[50]
+                    : t.palette.grey[900],
+                backgroundSize: "80%",
+                backgroundPosition: "center",
+                borderRadius: "8px",
+                border: "1px solid #eaeaea",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            />
+
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md={6}
+              component={Paper}
+              elevation={6}
+              square
+            >
               <Box
-                component="form"
-                noValidate
-                onSubmit={handleSubmit}
-                sx={{ mt: 1 }}>
-                {/* // handle errors with material ui documentations textField */}
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="nom"
-                  label="Votre SuperName"
-                  name="nom"
-                  autoComplete="name"
-                  autoFocus
-                  error={errors.nom !== ""}
-                  helperText={errors.nom}
-                  InputProps={{
-                    endAdornment: errors.nom ? (
-                      <HighlightOffIcon style={{ color: red[500] }} />
-                    ) : (
-                      <CheckCircleOutlineIcon style={{ color: green[500] }} />
-                    ),
-                  }}
-                  FormHelperTextProps={{
-                    style: {
-                      color: errors.nom ? red[500] : green[500],
-                    },
-                  }}
-                />
+                sx={{
+                  my: 6,
+                  mx: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <Avatar sx={{ bgcolor: "secondary.main" }}>
+                  <LockOutlinedIcon />
+                </Avatar>
+                <Typography component="h1" variant="h5">
+                  S'enregistrer
+                </Typography>
+                <Box
+                  component="form"
+                  noValidate
+                  onSubmit={handleSubmit}
+                  sx={{}}
+                >
+                  {/* // handle errors with material ui documentations textField */}
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="nom"
+                    label="Votre SuperName"
+                    name="nom"
+                    autoComplete="name"
+                    autoFocus
+                    error={errors.nom !== ""}
+                    helperText={errors.nom}
+                    InputProps={{
+                      endAdornment: errors.nom && (
+                        <HighlightOffIcon style={{ color: red[500] }} />
+                      ),
+                    }}
+                    FormHelperTextProps={{
+                      style: {
+                        color: errors.nom ? red[500] : green[500],
+                      },
+                    }}
+                  />
 
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="telephone"
-                  label="Numéro de téléphone"
-                  name="telephone"
-                  autoComplete="phone"
-                  autoFocus
-                  inputProps={{ maxLength: 10 }}
-                  error={errors.telephone !== ""}
-                  helperText={errors.telephone}
-                  InputProps={{
-                    endAdornment: errors.telephone ? (
-                      <HighlightOffIcon style={{ color: red[500] }} />
-                    ) : (
-                      <CheckCircleOutlineIcon style={{ color: green[500] }} />
-                    ),
-                  }}
-                  FormHelperTextProps={{
-                    style: {
-                      color: errors.telephone ? red[500] : green[500],
-                    },
-                  }}
-                />
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="email"
-                  label="Email Address"
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  autoFocus
-                  error={errors.email !== ""}
-                  helperText={errors.email}
-                  InputProps={{
-                    endAdornment: errors.email ? (
-                      <HighlightOffIcon style={{ color: red[500] }} />
-                    ) : (
-                      <CheckCircleOutlineIcon style={{ color: green[500] }} />
-                    ),
-                  }}
-                  FormHelperTextProps={{
-                    style: {
-                      color: errors.email ? red[500] : green[500],
-                    },
-                  }}
-                />
-                {/* Add this Box for MapLocation */}
-                <MapLocation
-                  HighlightOffIcon={HighlightOffIcon}
-                  CheckCircleOutlineIcon={CheckCircleOutlineIcon}
-                  red={red}
-                  green={green}
-                  locationCallBack={handleLocation}
-                  error={errors.location}
-                />
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="telephone"
+                    label="Numéro de téléphone"
+                    name="telephone"
+                    autoComplete="phone"
+                    autoFocus
+                    inputProps={{ maxLength: 10 }}
+                    error={errors.telephone !== ""}
+                    helperText={errors.telephone}
+                    InputProps={{
+                      endAdornment: errors.telephone && (
+                        <HighlightOffIcon style={{ color: red[500] }} />
+                      ),
+                    }}
+                    FormHelperTextProps={{
+                      style: {
+                        color: errors.telephone ? red[500] : green[500],
+                      },
+                    }}
+                  />
+                  <TextField
+                    margin="normal"
+                    fullWidth
+                    id="email"
+                    label="Email Address"
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    autoFocus
+                    error={errors.email !== ""}
+                    helperText={errors.email}
+                    InputProps={{
+                      endAdornment: errors.email && (
+                        <HighlightOffIcon style={{ color: red[500] }} />
+                      ),
+                    }}
+                    FormHelperTextProps={{
+                      style: {
+                        color: errors.email ? red[500] : green[500],
+                      },
+                    }}
+                  />
+                  {/* Add this Box for MapLocation */}
+                  <MapLocation
+                    HighlightOffIcon={HighlightOffIcon}
+                    CheckCircleOutlineIcon={CheckCircleOutlineIcon}
+                    red={red}
+                    green={green}
+                    locationCallBack={handleLocation}
+                    error={errors.location}
+                  />
 
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  name="password"
-                  label="Password"
-                  type="password"
-                  id="password"
-                  autoComplete="current-password"
-                />
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="password"
+                    label="Password"
+                    type="password"
+                    id="password"
+                    autoComplete="current-password"
+                    error={errors.password !== ""}
+                    helperText={errors.password}
+                    InputProps={{
+                      endAdornment: errors.password && (
+                        <HighlightOffIcon style={{ color: red[500] }} />
+                      ),
+                    }}
+                    FormHelperTextProps={{
+                      style: {
+                        color: errors.password ? red[500] : green[500],
+                      },
+                    }}
+                  />
 
-                {[...Array(3)].map((_, index) => (
-                  <FormControl key={index} sx={{ display: "flex", mt: 1 }}>
-                    <InputLabel id={`incident-select-label-${index}`}>
-                      Incident {index + 1}
-                    </InputLabel>
-                    <Select
-                      labelId={`incident-select-label-${index}`}
-                      id={`incident-select-${index}`}
-                      sx={{ minWidth: 120, marginBottom: 2 }}
-                      value={selectedIncidents[index] || ""}
-                      onChange={handleChange(index)}>
-                      {incidents.map((incident, idx) => (
-                        <MenuItem
-                          key={idx}
-                          value={incident.id}
-                          disabled={selectedIncidents.includes(incident.id)}>
-                          {incident.type}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                ))}
-                <FormControlLabel
-                  control={<Checkbox value="remember" color="primary" />}
-                  label="Remember me"
-                />
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  sx={{ mt: 3, mb: 2 }}
-                  onClick={playAnimation}>
-                  Sign In
-                </Button>
-                <Grid container>
-                  <Grid item xs>
-                    <Link
-                      onClick={() => navigate("/Login")}
-                      variant="body2"
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}>
-                      {"Vous avez un compte ? Connectez-vous"}
-                    </Link>
+                  {[...Array(3)].map((_, index) => (
+                    <FormControl key={index} sx={{ display: "flex" }}>
+                      <InputLabel id={`incident-select-label-${index}`}>
+                        Incident {index + 1}
+                      </InputLabel>
+                      <Select
+                        labelId={`incident-select-label-${index}`}
+                        id={`incident-select-${index}`}
+                        sx={{ minWidth: 120, marginBottom: 1 }}
+                        value={selectedIncidents[index] || ""}
+                        onChange={handleChange(index)}
+                      >
+                        {incidents.map((incident, idx) => (
+                          <MenuItem
+                            key={idx}
+                            value={incident.id}
+                            disabled={selectedIncidents.includes(incident.id)}
+                          >
+                            {incident.type}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  ))}
+                  <FormControlLabel
+                    control={<Checkbox value="remember" color="primary" />}
+                    label="Remember me"
+                  />
+                  <Button type="submit" fullWidth variant="contained">
+                    Sign In
+                  </Button>
+                  <Grid container>
+                    <Grid item xs>
+                      <Link
+                        onClick={() => navigate("/Login")}
+                        variant="body2"
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {"Vous avez un compte ? Connectez-vous"}
+                      </Link>
+                    </Grid>
                   </Grid>
-                </Grid>
-                <Copyright sx={{ mt: 5 }} />
+                  <Copyright sx={{ mt: 1 }} />
+                </Box>
               </Box>
-            </Box>
+            </Grid>
           </Grid>
-        </Grid>
-      )}
-    </ThemeProvider>
+        )}
+      </ThemeProvider>
+    </>
   );
 };
 

@@ -13,12 +13,13 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
-import { API_URL, HERO_KEY } from "../../App";
+import { HERO_KEY } from "../../App";
 import axios from "axios";
 import hero from "../Heros/Hero.json";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import { green, red } from "@mui/material/colors";
+import { AuthContext } from "./Context/AuthProvider";
+import { Toaster } from "react-hot-toast";
 
 const Copyright = (props) => {
   return (
@@ -26,7 +27,8 @@ const Copyright = (props) => {
       variant="body2"
       color="text.secondary"
       align="center"
-      {...props}>
+      {...props}
+    >
       {"Copyright © "}
       <Link color="inherit" href="https://mui.com/">
         Squad Gang
@@ -47,8 +49,9 @@ const defaultTheme = createTheme({
   },
 });
 
-const Register = () => {
+const Authentification = () => {
   const navigate = useNavigate();
+  const { login } = React.useContext(AuthContext);
   const [image, setImage] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState({
@@ -61,35 +64,13 @@ const Register = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get("email"),
-      password: data.get("password"),
-      nom: data.get("nom"),
-    });
-    if (validateForm(data)) {
-      console.log("valid");
-      sendData(data);
-    }
+
+    console.log("valid");
+    sendData(data);
   };
   const sendData = async (data) => {
     try {
-      const response = await axios.post(
-        `${API_URL}/api/heros/createHero`,
-        {
-          email: data.get("email"),
-          password: data.get("password"),
-          nom: data.get("nom"),
-        },
-        {
-          Headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log(response);
-      if (response.status === 200) {
-        navigate("/login");
-      }
+      await login(data.get("nom"), data.get("password"));
     } catch (error) {
       console.log(error);
     }
@@ -115,22 +96,16 @@ const Register = () => {
   const validateForm = (data) => {
     // Cloner l'objet errors pour ne pas le modifier directement
     let newErrors = { ...errors };
-
     // Vérifiez si le nom est vide
     if (!data.get("nom")) {
       newErrors.nom = "Le nom est requis.";
     } else {
       newErrors.nom = "";
     }
-
-    // Vérifiez si l'email est vide ou n'a pas le format correct
-    const email = data.get("email");
-    if (!email) {
-      newErrors.email = "L'email est requis.";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "L'email n'est pas valide.";
+    if (!data.get("password")) {
+      newErrors.password = "Le mot de passe est requis.";
     } else {
-      newErrors.email = "";
+      newErrors.password = "";
     }
 
     // Mettez à jour l'état des erreurs
@@ -144,6 +119,7 @@ const Register = () => {
   }, []);
   return (
     <ThemeProvider theme={defaultTheme}>
+      <Toaster reverseOrder={false} />
       {!loading && (
         <Grid container component="main" sx={{ mt: 20 }}>
           <CssBaseline />
@@ -174,7 +150,8 @@ const Register = () => {
             md={6}
             component={Paper}
             elevation={6}
-            square>
+            square
+          >
             <Box
               sx={{
                 my: 8,
@@ -182,7 +159,8 @@ const Register = () => {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-              }}>
+              }}
+            >
               <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
                 <LockOutlinedIcon />
               </Avatar>
@@ -193,7 +171,8 @@ const Register = () => {
                 component="form"
                 noValidate
                 onSubmit={handleSubmit}
-                sx={{ mt: 1 }}>
+                sx={{ mt: 1 }}
+              >
                 {/* // handle errors with material ui documentations textField */}
                 <TextField
                   margin="normal"
@@ -207,10 +186,8 @@ const Register = () => {
                   error={errors.nom !== ""}
                   helperText={errors.nom}
                   InputProps={{
-                    endAdornment: errors.nom ? (
+                    endAdornment: errors.nom && (
                       <HighlightOffIcon style={{ color: red[500] }} />
-                    ) : (
-                      <CheckCircleOutlineIcon style={{ color: green[500] }} />
                     ),
                   }}
                   FormHelperTextProps={{
@@ -229,6 +206,18 @@ const Register = () => {
                   type="password"
                   id="password"
                   autoComplete="current-password"
+                  error={errors.nom !== ""}
+                  helperText={errors.password}
+                  InputProps={{
+                    endAdornment: errors.password && (
+                      <HighlightOffIcon style={{ color: red[500] }} />
+                    ),
+                  }}
+                  FormHelperTextProps={{
+                    style: {
+                      color: errors.password ? red[500] : green[500],
+                    },
+                  }}
                 />
 
                 <FormControlLabel
@@ -239,7 +228,8 @@ const Register = () => {
                   type="submit"
                   fullWidth
                   variant="contained"
-                  sx={{ mt: 3, mb: 2 }}>
+                  sx={{ mt: 3, mb: 2 }}
+                >
                   Sign In
                 </Button>
                 <Grid container>
@@ -252,7 +242,8 @@ const Register = () => {
                         flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "center",
-                      }}>
+                      }}
+                    >
                       {"Vous n'avez pas de compte ? Inscrivez-vous"}
                     </Link>
                   </Grid>
@@ -267,4 +258,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default Authentification;

@@ -12,7 +12,6 @@ const MapLocation = ({
   green,
 }) => {
   const [searchBox, setSearchBox] = React.useState(null);
-
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: GOOGLEKEY,
     libraries,
@@ -29,11 +28,11 @@ const MapLocation = ({
 
   if (loadError) return "Error loading maps";
   if (!isLoaded) return "Loading Maps";
-
   return (
     <StandaloneSearchBox
       onLoad={(ref) => setSearchBox(ref)}
-      onPlacesChanged={handleLocation}>
+      onPlacesChanged={handleLocation}
+    >
       <TextField
         margin="normal"
         required
@@ -45,10 +44,8 @@ const MapLocation = ({
         error={error !== ""}
         helperText={error}
         InputProps={{
-          endAdornment: error ? (
+          endAdornment: error && (
             <HighlightOffIcon style={{ color: red[500] }} />
-          ) : (
-            <CheckCircleOutlineIcon style={{ color: green[500] }} />
           ),
         }}
         FormHelperTextProps={{

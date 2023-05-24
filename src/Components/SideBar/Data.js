@@ -1,14 +1,4 @@
-import {
-  HomeIcon,
-  CalendarIcon,
-  UserIcon,
-  RolesIcon,
-  AuthIcon,
-  WizardIcon,
-  ModalIcon,
-  MapIcon,
-  RegisterIcon,
-} from "./Icons";
+import { HomeIcon, AuthIcon, WizardIcon, MapIcon, RegisterIcon } from "./Icons";
 
 export const SIDEBAR_DATA = [
   {
@@ -23,13 +13,6 @@ export const SIDEBAR_DATA = [
     path: "Plan",
     icon: <MapIcon />,
   },
-  {
-    id: 4,
-    name: "roles & permissions",
-    path: "roles",
-    icon: <RolesIcon />,
-  },
-
   {
     id: 5,
     name: "Login",

@@ -1,30 +1,30 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
-import { API_URL } from "../../../App";
+import React, { useContext, useEffect, useState } from "react";
 import { Box, Grid, TextField } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-
+import { getAllHeros } from "../../Function/AxiosRequest";
+import { AuthContext } from "../../Login/Context/AuthProvider";
+import jwtDecode from "jwt-decode";
+import { Toaster } from "react-hot-toast";
 const TableHeros = () => {
   const [heros, setHeros] = useState([]);
   const [filterValue, setFilterValue] = useState("");
-  const getHeros = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/api/heros/allHeros`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+  const { user } = useContext(AuthContext);
 
-      if (response.status === 200) {
-        setHeros(response.data.heros);
-      }
-    } catch (error) {}
+  const getHeros = async () => {
+    const allHeros = await getAllHeros();
+    setHeros(allHeros);
   };
 
   useEffect(() => {
     getHeros();
   }, []);
 
+  useEffect(() => {
+    console.log(user);
+    if (user) {
+      console.log(jwtDecode(user));
+    }
+  }, [user]);
   const generateColumns = () => {
     if (heros.length > 0) {
       const keys = Object.keys(heros[0]);
@@ -57,14 +57,14 @@ const TableHeros = () => {
     return [];
   };
 
-  const rows = heros.map((hero, index) => ({
+  const rows = heros.map((hero) => ({
     ...hero,
-    id: index,
+    id: hero.id,
   }));
   const filteredRows = heros
-    .map((hero, index) => ({
+    .map((hero) => ({
       ...hero,
-      id: index,
+      id: hero.id,
     }))
     .filter((row) =>
       Object.values(row).some(
@@ -74,34 +74,38 @@ const TableHeros = () => {
       )
     );
   return (
-    <Grid
-      container
-      component="main"
-      sx={{
-        mt: 2,
-        display: "flex",
-        flexDirection: "column",
-        height: "80vh",
-        width: "100%",
-        justifyContent: "center",
-        alignItems: "center",
-      }}>
-      <Box sx={{ mb: 2 }}>
-        <TextField
-          variant="outlined"
-          value={filterValue}
-          onChange={(e) => setFilterValue(e.target.value)}
-          placeholder="Filtrer par nom, email, etc..."
+    <>
+      <Toaster reverseOrder={false} />
+      <Grid
+        container
+        component="main"
+        sx={{
+          mt: 2,
+          display: "flex",
+          flexDirection: "column",
+          height: "80vh",
+          width: "100%",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Box sx={{ mb: 2 }}>
+          <TextField
+            variant="outlined"
+            value={filterValue}
+            onChange={(e) => setFilterValue(e.target.value)}
+            placeholder="Filtrer par nom, email, etc..."
+          />
+        </Box>
+        <DataGrid
+          columns={generateColumns()}
+          rows={filterValue ? filteredRows : rows}
+          pageSize={1}
+          rowsPerPageOptions={[5, 10, 20]}
+          checkboxSelection
         />
-      </Box>
-      <DataGrid
-        columns={generateColumns()}
-        rows={filterValue ? filteredRows : rows}
-        pageSize={1}
-        rowsPerPageOptions={[5, 10, 20]}
-        checkboxSelection
-      />
-    </Grid>
+      </Grid>
+    </>
   );
 };
 

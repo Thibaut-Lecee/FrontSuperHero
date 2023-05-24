@@ -1,17 +1,25 @@
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import "./styles/global.css";
 import "./App.css";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Accueil from "./Components/Accueil/Accueil";
 import { Sidebar, dummyData } from "./Components/SideBar/index";
 import Maps from "./Components/Maps/Maps";
 import Login from "./Components/Login/Authentification";
 import Register from "./Components/Register/Register";
 import TableHeros from "./Components/Heros/Table/TableHeros";
+import { AuthContext } from "./Components/Login/Context/AuthProvider";
 export const API_URL = process.env.REACT_APP_API_URL;
 export const GOOGLEKEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 export const HERO_KEY = process.env.REACT_APP_SUPER_HERO_API_KEY;
 function App() {
+  const { auth } = useContext(AuthContext);
+
+  useEffect(() => {
+    if (auth) {
+      console.log(auth);
+    }
+  }, [auth]);
   return (
     <div id="main">
       <Sidebar>
@@ -36,13 +44,13 @@ function App() {
                     />
                   );
                 case "Login":
-                  return (
+                  return !auth ? (
                     <Route
                       key={index}
                       path={`/${item.path}`}
                       element={<Login />}
                     />
-                  );
+                  ) : null;
                 case "Inscription":
                   return (
                     <Route

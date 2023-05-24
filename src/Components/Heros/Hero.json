@@ -1,9 +1,5 @@
 [
   {
-    "id": 1,
-    "name": "batman"
-  },
-  {
     "id": 2,
     "name": "superman"
   },
@@ -13,11 +9,11 @@
   },
   {
     "id": 4,
-    "name": "flash"
+    "name": "Thor"
   },
   {
     "id": 5,
-    "name": "godzilla"
+    "name": "hulk"
   },
   {
     "id": 6,
@@ -29,10 +25,30 @@
   },
   {
     "id": 8,
-    "name": "jigsaw"
+    "name": "Nick Fury"
   },
   {
     "id": 9,
     "name": "blackwidow"
+  },
+  {
+    "id": 10,
+    "name": "Odin"
+  },
+  {
+    "id": 11,
+    "name": "Harry Potter"
+  },
+  {
+    "id": 12,
+    "name": "Goliath IV"
+  },
+  {
+    "id:": 13,
+    "name": "Naruto Uzumaki"
+  },
+  {
+    "id:": 14,
+    "name": "Deadpool"
   }
 ]
