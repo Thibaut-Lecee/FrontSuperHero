@@ -29,14 +29,6 @@ function App() {
           {dummyData &&
             dummyData.map((item, index) => {
               switch (item.name) {
-                case "Accueil":
-                  return (
-                    <Route
-                      key={index}
-                      path={`/${item.path}`}
-                      element={<Accueil />}
-                    />
-                  );
                 case "Plan":
                   return (
                     <Route

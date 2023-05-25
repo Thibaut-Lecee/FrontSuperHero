@@ -56,6 +56,7 @@ const MarkerIntervention = ({
   return (
     <>
       <MarkerF
+        key={marker.intervention.id}
         position={position}
         icon={{
           url: `${marker.intervention.incident.svg}`,

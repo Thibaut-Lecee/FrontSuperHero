@@ -103,11 +103,10 @@ const Register = () => {
         }
       );
       if (response.status === 200) {
-        console.log(redirectLogin);
         if (redirectLogin === false) {
           navigate("/Login");
         } else {
-          navigate("/Plan");
+          navigate("/");
         }
         showNotificationSuccess("Inscription réussie");
       }

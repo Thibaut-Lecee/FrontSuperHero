@@ -2,15 +2,9 @@ import { HomeIcon, AuthIcon, WizardIcon, MapIcon, RegisterIcon } from "./Icons";
 
 export const SIDEBAR_DATA = [
   {
-    id: 1,
-    name: "Accueil",
-    path: "",
-    icon: <HomeIcon />,
-  },
-  {
     id: 2,
     name: "Plan",
-    path: "Plan",
+    path: "",
     icon: <MapIcon />,
   },
   {
@@ -31,16 +25,4 @@ export const SIDEBAR_DATA = [
     path: "Superheros",
     icon: <WizardIcon />,
   },
-  // {
-  //   id: 7,
-  //   name: "Profil",
-  //   path: "Profil",
-  //   icon: <UserIcon />,
-  // },
-  // {
-  //   id: 8,
-  //   name: "Déconnexion",
-  //   path: "Deconnexion",
-  //   icon: <ModalIcon />,
-  // },
 ];

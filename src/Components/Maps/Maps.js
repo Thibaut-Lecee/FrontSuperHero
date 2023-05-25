@@ -73,6 +73,7 @@ const Maps = () => {
       const filtered = interventions.filter(
         (intervention) => intervention.status.status === value
       );
+
       setFilteredInterventions(filtered);
       setZoom(5);
     }
@@ -184,6 +185,7 @@ const Maps = () => {
           status: intervention.status.status,
         };
       });
+    
       setInterventionMarkers(markers);
     } else {
       const markers = interventions.map((intervention) => {
@@ -195,6 +197,7 @@ const Maps = () => {
           status: intervention.status.status,
         };
       });
+      
       setInterventionMarkers(markers);
     }
   }, [filteredInterventions, interventions, created]);
@@ -229,7 +232,7 @@ const Maps = () => {
         >
           {interventionMarkers.map((marker, index) => (
             <MarkerIntervention
-              key={index}
+              key={marker.id}
               marker={marker}
               nearbyHeroes={nearbyHeroes}
               setSelectedIntervention={handleInterventionClick}
