@@ -3,8 +3,6 @@ import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
 import TextField from "@mui/material/TextField";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
 import Link from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
@@ -26,7 +24,8 @@ import {
   showNotificationSuccess,
 } from "../Function/AxiosRequest";
 import { toast, Toaster } from "react-hot-toast";
-
+import Cookies from "universal-cookie";
+const cookies = new Cookies();
 const Copyright = (props) => {
   return (
     <Typography
@@ -60,6 +59,7 @@ const Register = () => {
   const [incidents, setIncidents] = React.useState([]);
   const [image, setImage] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const [redirectLogin, setRedirectLogin] = React.useState(false);
   const [errors, setErrors] = React.useState({
     nom: "",
     email: "",
@@ -76,18 +76,11 @@ const Register = () => {
     lng: null,
   });
 
-  const handleSubmit = (event) => {
+  const handleRegister = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get("email"),
-      password: data.get("password"),
-      nom: data.get("nom"),
-      incidents: selectedIncidents,
-      adresse: location,
-    });
+
     if (validateForm(data)) {
-      console.log("valid");
       sendData(data);
     }
   };
@@ -109,10 +102,14 @@ const Register = () => {
           },
         }
       );
-      console.log(response);
       if (response.status === 200) {
+        console.log(redirectLogin);
+        if (redirectLogin === false) {
+          navigate("/Login");
+        } else {
+          navigate("/Plan");
+        }
         showNotificationSuccess("Inscription réussie");
-        navigate("/Login");
       }
     } catch (error) {
       console.log(error);
@@ -143,18 +140,18 @@ const Register = () => {
       );
 
       setIncidents(response.data.incidents);
-    } catch (error) {}
+    } catch (error) {
+      handleAxiosErrors(error);
+    }
   };
 
   const getRandomPicture = async () => {
     setLoading(true);
     try {
       const random = Math.floor(Math.random() * hero.length);
-      console.log(hero[random]);
       const picture = await axios.get(
         `https://www.superheroapi.com/api.php/${HERO_KEY}/search/${hero[random].name}`
       );
-      console.log(picture.data.results);
       if (picture.status === 200 && picture.data.results !== undefined) {
         setLoading(false);
         setImage(picture.data.results[0].image.url);
@@ -218,6 +215,12 @@ const Register = () => {
   React.useEffect(() => {
     getAllIncidents();
     getRandomPicture();
+    const token = cookies.get("AccessToken");
+    if (token !== undefined) {
+      setRedirectLogin(true);
+    } else {
+      setRedirectLogin(false);
+    }
   }, []);
   return (
     <>
@@ -270,12 +273,7 @@ const Register = () => {
                 <Typography component="h1" variant="h5">
                   S'enregistrer
                 </Typography>
-                <Box
-                  component="form"
-                  noValidate
-                  onSubmit={handleSubmit}
-                  sx={{}}
-                >
+                <Box component="form" noValidate onSubmit={handleRegister}>
                   {/* // handle errors with material ui documentations textField */}
                   <TextField
                     margin="normal"
@@ -402,29 +400,10 @@ const Register = () => {
                       </Select>
                     </FormControl>
                   ))}
-                  <FormControlLabel
-                    control={<Checkbox value="remember" color="primary" />}
-                    label="Remember me"
-                  />
                   <Button type="submit" fullWidth variant="contained">
                     Sign In
                   </Button>
-                  <Grid container>
-                    <Grid item xs>
-                      <Link
-                        onClick={() => navigate("/Login")}
-                        variant="body2"
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {"Vous avez un compte ? Connectez-vous"}
-                      </Link>
-                    </Grid>
-                  </Grid>
+
                   <Copyright sx={{ mt: 1 }} />
                 </Box>
               </Box>

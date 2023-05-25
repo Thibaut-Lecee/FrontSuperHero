@@ -52,6 +52,7 @@ export const handleAxiosErrors = (error) => {
 };
 
 export const showNotificationSuccess = (message) => {
+  console.log(message);
   toast.success(message, {
     duration: 1000,
     position: "top-right",

@@ -119,7 +119,6 @@ const Authentification = () => {
   }, []);
   return (
     <ThemeProvider theme={defaultTheme}>
-      <Toaster reverseOrder={false} />
       {!loading && (
         <Grid container component="main" sx={{ mt: 20 }}>
           <CssBaseline />
@@ -218,11 +217,6 @@ const Authentification = () => {
                       color: errors.password ? red[500] : green[500],
                     },
                   }}
-                />
-
-                <FormControlLabel
-                  control={<Checkbox value="remember" color="primary" />}
-                  label="Remember me"
                 />
                 <Button
                   type="submit"

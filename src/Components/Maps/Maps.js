@@ -1,34 +1,56 @@
-import { GoogleMap, useLoadScript, InfoWindowF } from "@react-google-maps/api";
+import { GoogleMap, useLoadScript } from "@react-google-maps/api";
 import React, { useCallback, useEffect } from "react";
-import { GOOGLEKEY } from "../../App";
-import { getAllHeros, getAllInterventions } from "../Function/AxiosRequest";
+import { API_URL, GOOGLEKEY } from "../../App";
+import {
+  getAllHeros,
+  getAllInterventions,
+  handleAxiosErrors,
+} from "../Function/AxiosRequest";
 import { getDistanceFromLatLonInKm } from "../Function/HelpersFunction";
 import Filter from "./Filter";
 import MarkerIntervention from "./MarkerIntervention";
-import MarkerHero from "./MarkerHero";
+import { Toaster } from "react-hot-toast";
+import DeclarationIncident from "./DeclarationIncident";
+import axios from "axios";
 const libraries = ["places"];
 
 const Maps = () => {
   const [center, setCenter] = React.useState({ lat: 48.866667, lng: 2.333333 });
   const [heros, setHeros] = React.useState([]);
   const [interventions, setInterventions] = React.useState([]);
-  const [selectedHero, setSelectedHero] = React.useState(null);
   const [selectedIntervention, setSelectedIntervention] = React.useState(null);
   const [filteredInterventions, setFilteredInterventions] = React.useState([]); // On stocke les interventions filtrées dans un état
   const [open, setOpen] = React.useState(false);
   const [checked, setChecked] = React.useState(null);
   const [zoom, setZoom] = React.useState(5);
   const mapRef = React.useRef(null);
+  const [created, setCreated] = React.useState(false); // On stocke l'état de la création d'une intervention
   const [nearbyHeroes, setNearbyHeroes] = React.useState([]);
   const [interventionMarkers, setInterventionMarkers] = React.useState([]); // On stocke les marqueurs des interventions dans un état
-  const [interventionCircles, setInterventionCircles] = React.useState([]);
   const [heroMarkers, setHeroMarkers] = React.useState([]);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [incidents, setIncidents] = React.useState([]); // On stocke les incidents dans un état
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLEKEY,
     libraries,
   });
 
+  const getAllIncidents = async () => {
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/incidents/allIncidents`,
+        {
+          Headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      setIncidents(response.data.incidents);
+    } catch (error) {
+      handleAxiosErrors(error);
+    }
+  };
   const allheros = async () => {
     const herosCall = await getAllHeros();
     setHeros(herosCall);
@@ -46,11 +68,13 @@ const Maps = () => {
     setChecked(value);
     if (value === "Toutes") {
       setFilteredInterventions(interventions);
+      setZoom(5);
     } else {
       const filtered = interventions.filter(
         (intervention) => intervention.status.status === value
       );
       setFilteredInterventions(filtered);
+      setZoom(5);
     }
   };
 
@@ -84,15 +108,25 @@ const Maps = () => {
                 interventionPosition,
                 heroPosition
               );
-              if (distance <= 100) {
+
+              if (
+                distance <= 50 &&
+                hero.incidents.find(
+                  (incident) => incident.type === marker.incident.type
+                )
+              ) {
                 // If the hero is within a 50 km radius
                 return {
                   // Create a new object that includes the hero's name and distance
                   nom: hero.nom,
+                  svg: hero.svg,
+                  phone: hero.phoneNumber,
+                  position: heroPosition,
                   distance,
                 };
               }
             }
+
             return null;
           })
           .filter((hero) => hero !== null); // Filter out any heroes that were not within the radius
@@ -163,21 +197,25 @@ const Maps = () => {
       });
       setInterventionMarkers(markers);
     }
-  }, [filteredInterventions, interventions]);
+  }, [filteredInterventions, interventions, created]);
 
   useEffect(() => {
     allheros();
     allInterventions();
-  }, []);
+    getAllIncidents();
+  }, [created]);
 
+  // Declarationincident
   return (
     <React.Fragment>
+      <Toaster />
       <Filter
         handleClick={handleClick}
         handleToggle={handleToggle}
         checked={checked}
         open={open}
       />
+      <DeclarationIncident incidents={incidents} created={setCreated} />
       {isLoaded && (
         <GoogleMap
           ref={mapRef}

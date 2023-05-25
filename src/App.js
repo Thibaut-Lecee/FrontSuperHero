@@ -9,6 +9,7 @@ import Login from "./Components/Login/Authentification";
 import Register from "./Components/Register/Register";
 import TableHeros from "./Components/Heros/Table/TableHeros";
 import { AuthContext } from "./Components/Login/Context/AuthProvider";
+import { Toaster } from "react-hot-toast";
 export const API_URL = process.env.REACT_APP_API_URL;
 export const GOOGLEKEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
 export const HERO_KEY = process.env.REACT_APP_SUPER_HERO_API_KEY;
@@ -22,6 +23,7 @@ function App() {
   }, [auth]);
   return (
     <div id="main">
+      <Toaster reverseOrder={false} />
       <Sidebar>
         <Routes>
           {dummyData &&
