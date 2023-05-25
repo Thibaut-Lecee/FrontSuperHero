@@ -19,7 +19,12 @@ const MarkerIntervention = ({
   const [duration, setDuration] = React.useState(null);
   const handleClick = () => {
     setOpen(!open);
-    if (openHero) setOpenHero(!openHero);
+    if (openHero) {
+      setOpenHero(!openHero);
+      setDirection(null);
+      setDuration(null);
+      setSelectedHero(null);
+    }
     setSelectedIntervention(intervention, open);
   };
 

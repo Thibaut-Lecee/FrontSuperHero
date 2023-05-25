@@ -1,12 +1,10 @@
 import {
   Grid,
-  TextField,
   Collapse,
   IconButton,
   Box,
   MenuItem,
   Select,
-  FormControlLabel,
   InputLabel,
   FormControl,
   Button,
@@ -147,11 +145,22 @@ const DeclarationIncident = ({ incidents, created }) => {
             justifyContent: "center",
           }}
         >
-          <InputLabel id={`incident-select-label-`}>Type d'incident</InputLabel>
+          <InputLabel
+            id={`incident-select-label-`}
+            sx={{
+              mt: 1,
+              ml: 3,
+              alignItems: "center",
+              justifyContent: "center",
+              size: "small",
+            }}
+          >
+            Type d'incident
+          </InputLabel>
           <Select
             labelId={`incident-select-label-`}
             id={`incident-select-`}
-            sx={{ minWidth: 150, mt: 1 }}
+            sx={{ minWidth: 175, mt: 1 }}
             value={selectedIncidents.id || ""}
             onChange={handleIncident}
           >
@@ -166,7 +175,20 @@ const DeclarationIncident = ({ incidents, created }) => {
             ))}
           </Select>
         </FormControl>
-        <Button onClick={handleSubmit}>Valider</Button>
+        <Button
+          onClick={handleSubmit}
+          sx={{
+            mt: 1,
+            backgroundColor: "#3f51b5",
+            color: "white",
+            "&:hover": {
+              backgroundColor: "#5262b5",
+              color: "white",
+            },
+          }}
+        >
+          Valider
+        </Button>
       </Collapse>
     </Grid>
   );

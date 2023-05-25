@@ -18,18 +18,16 @@ const Maps = () => {
   const [center, setCenter] = React.useState({ lat: 48.866667, lng: 2.333333 });
   const [heros, setHeros] = React.useState([]);
   const [interventions, setInterventions] = React.useState([]);
-  const [selectedIntervention, setSelectedIntervention] = React.useState(null);
-  const [filteredInterventions, setFilteredInterventions] = React.useState([]); // On stocke les interventions filtrées dans un état
+  const [filteredInterventions, setFilteredInterventions] = React.useState([]);
   const [open, setOpen] = React.useState(false);
   const [checked, setChecked] = React.useState(null);
   const [zoom, setZoom] = React.useState(5);
   const mapRef = React.useRef(null);
-  const [created, setCreated] = React.useState(false); // On stocke l'état de la création d'une intervention
+  const [created, setCreated] = React.useState(false);
   const [nearbyHeroes, setNearbyHeroes] = React.useState([]);
-  const [interventionMarkers, setInterventionMarkers] = React.useState([]); // On stocke les marqueurs des interventions dans un état
-  const [heroMarkers, setHeroMarkers] = React.useState([]);
-  const [isDragging, setIsDragging] = React.useState(false);
-  const [incidents, setIncidents] = React.useState([]); // On stocke les incidents dans un état
+  const [selectedIntervention, setSelectedIntervention] = React.useState(null);
+  const [interventionMarkers, setInterventionMarkers] = React.useState([]);
+  const [incidents, setIncidents] = React.useState([]);
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLEKEY,
     libraries,
@@ -64,20 +62,24 @@ const Maps = () => {
     setOpen(!open);
   };
 
-  const handleToggle = (value) => () => {
-    setChecked(value);
-    if (value === "Toutes") {
-      setFilteredInterventions(interventions);
-      setZoom(5);
-    } else {
-      const filtered = interventions.filter(
-        (intervention) => intervention.status.status === value
-      );
+  const handleToggle = useCallback(
+    (value) => () => {
+      console.log(value, checked, created);
+      setChecked(value);
+      if (value === "Toutes" || created === true) {
+        setFilteredInterventions(interventions);
+        setZoom(5);
+      } else {
+        const filtered = interventions.filter(
+          (intervention) => intervention.status.status === value
+        );
 
-      setFilteredInterventions(filtered);
-      setZoom(5);
-    }
-  };
+        setFilteredInterventions(filtered);
+        setZoom(5);
+      }
+    },
+    [created, interventions, checked]
+  );
 
   const handleInterventionClick = (marker, open) => {
     if (open === true) {
@@ -116,9 +118,7 @@ const Maps = () => {
                   (incident) => incident.type === marker.incident.type
                 )
               ) {
-                // If the hero is within a 50 km radius
                 return {
-                  // Create a new object that includes the hero's name and distance
                   nom: hero.nom,
                   svg: hero.svg,
                   phone: hero.phoneNumber,
@@ -130,7 +130,7 @@ const Maps = () => {
 
             return null;
           })
-          .filter((hero) => hero !== null); // Filter out any heroes that were not within the radius
+          .filter((hero) => hero !== null); // Filter heros where distance is > 50 km
         setNearbyHeroes(nearby);
       }
     }
@@ -139,40 +139,6 @@ const Maps = () => {
   const onLoad = useCallback((map) => {
     mapRef.current = map;
   }, []);
-
-  const handleDragStart = () => {
-    setIsDragging(true);
-  };
-
-  const handleDragEnd = (e) => {
-    setIsDragging(false);
-    const newCenter = { lat: e.latLng.lat(), lng: e.latLng.lng() };
-    setCenter(newCenter);
-  };
-
-  useEffect(() => {
-    if (isLoaded && heros.length > 0 && !isDragging) {
-      const filteredHeros = heros.filter((hero) => {
-        if (hero.adresse) {
-          const [lat, lng] = hero.adresse.split(", ");
-          const heroPosition = { lat: parseFloat(lat), lng: parseFloat(lng) };
-          const distance = getDistanceFromLatLonInKm(center, heroPosition);
-          return distance <= 50; // Filtrer les héros dans le périmètre de 50 km
-        }
-        return false;
-      });
-
-      const markers = filteredHeros.map((hero) => {
-        if (hero.adresse) {
-          const [lat, lng] = hero.adresse.split(", ");
-          const position = { lat: parseFloat(lat), lng: parseFloat(lng) };
-          return position;
-        }
-        return null;
-      });
-      setHeroMarkers(markers);
-    }
-  }, [heros, center, isDragging]);
 
   useEffect(() => {
     if (filteredInterventions.length > 0) {
@@ -185,7 +151,7 @@ const Maps = () => {
           status: intervention.status.status,
         };
       });
-    
+
       setInterventionMarkers(markers);
     } else {
       const markers = interventions.map((intervention) => {
@@ -197,7 +163,7 @@ const Maps = () => {
           status: intervention.status.status,
         };
       });
-      
+
       setInterventionMarkers(markers);
     }
   }, [filteredInterventions, interventions, created]);
@@ -206,6 +172,7 @@ const Maps = () => {
     allheros();
     allInterventions();
     getAllIncidents();
+    setCreated(false);
   }, [created]);
 
   // Declarationincident
@@ -225,12 +192,10 @@ const Maps = () => {
           zoom={zoom}
           center={center}
           mapContainerClassName="map-container"
-          onDragStart={handleDragStart}
-          onClick={handleDragEnd}
           onLoad={onLoad}
           options={{ disableDefaultUI: true }}
         >
-          {interventionMarkers.map((marker, index) => (
+          {interventionMarkers.map((marker) => (
             <MarkerIntervention
               key={marker.id}
               marker={marker}
