@@ -199,7 +199,7 @@ const Register = () => {
       newErrors.location = "";
     }
 
-    if (selectedIncidents.length < 0) {
+    if (selectedIncidents.filter((incident) => incident !== null).length < 1) {
       toast.error("Veuillez sélectionner au moins 1 incidents");
     } else {
       newErrors.incidents = "";
